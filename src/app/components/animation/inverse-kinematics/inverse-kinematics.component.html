@@ -1,10 +1,13 @@
 <div class="flexbox margin-top margin-bottom">
   <button
     mat-raised-button
-    color="accent"
+    color="primary"
     class="margin-right"
-    (click)="toggleVisibility()"
+    (click)="init()"
   >
+    APPLY
+  </button>
+  <button mat-raised-button color="primary" (click)="toggleVisibility()">
     {{ settingsVisible ? "HIDE" : "SHOW" }}
   </button>
 </div>
@@ -28,4 +31,8 @@
     <mat-label>G parameter</mat-label>
     <input matInput [(ngModel)]="g" type="number" />
   </mat-form-field>
+</div>
+
+<div class="flexbox height">
+  <div class="frame" #frame></div>
 </div>
