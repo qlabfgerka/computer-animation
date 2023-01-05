@@ -1,4 +1,47 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.flexbox {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.break {
+  height: 0;
+  flex-basis: 100%;
+  margin-bottom: 10px;
+}
+
+.margin-right {
+  margin-right: 1rem;
+}
+
+.margin-top {
+  margin-top: 1rem;
+}
+
+.margin-bottom {
+  margin-bottom: 1rem;
+}
+
+mat-slider {
+  width: 30rem;
+}
