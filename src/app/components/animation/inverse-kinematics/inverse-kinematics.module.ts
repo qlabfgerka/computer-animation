@@ -3,15 +3,20 @@ import { CommonModule } from '@angular/common';
 
 import { InverseKinematicsRoutingModule } from './inverse-kinematics-routing.module';
 import { InverseKinematicsComponent } from './inverse-kinematics.component';
-
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 
 @NgModule({
-  declarations: [
-    InverseKinematicsComponent
-  ],
+  declarations: [InverseKinematicsComponent],
   imports: [
     CommonModule,
-    InverseKinematicsRoutingModule
-  ]
+    InverseKinematicsRoutingModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule,
+    MatButtonModule,
+  ],
 })
-export class InverseKinematicsModule { }
+export class InverseKinematicsModule {}
