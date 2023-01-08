@@ -6,6 +6,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as THREE from 'three';
+import { Vector3 } from 'three';
 
 @Component({
   selector: 'app-inverse-kinematics',
@@ -47,7 +48,7 @@ export class InverseKinematicsComponent implements AfterViewInit {
   }
 
   public mouseEnter(event: MouseEvent): void {
-    let dotGeometry = new THREE.BufferGeometry();
+    /*let dotGeometry = new THREE.BufferGeometry();
     dotGeometry.setAttribute(
       'position',
       new THREE.Float32BufferAttribute(
@@ -61,16 +62,51 @@ export class InverseKinematicsComponent implements AfterViewInit {
     );
     let dotMaterial = new THREE.PointsMaterial({ size: 5, color: 0x00ff00 });
     let dot = new THREE.Points(dotGeometry, dotMaterial);
-    this.scene.add(dot);
+    this.scene.add(dot);*/
 
-    this.renderer.render(this.scene, this.camera);
+    const target = new THREE.Vector3(
+      -(this.frame.nativeElement.offsetWidth / 2 - event.offsetX) / 7,
+      (this.frame.nativeElement.offsetHeight / 2 - event.offsetY) / 7,
+      1
+    );
+
+    let iteration = 0;
+    while (
+      Math.abs(target.distanceTo(this.points[this.points.length - 1])) >
+        this.error &&
+      iteration < this.maxIterations
+    ) {
+      const gradients = [];
+      const anglesPlus = this.copy(this.angles);
+      const anglesMinus = this.copy(this.angles);
+
+      for (let i = 0; i < this.angles.length; i++) {
+        anglesPlus[i] = anglesPlus[i] + this.g;
+        anglesMinus[i] = anglesMinus[i] - this.g;
+
+        const anglesPlusRes = this.getGradients(anglesPlus);
+        const anglesMinusRes = this.getGradients(anglesMinus);
+
+        gradients[i] =
+          anglesPlusRes[anglesPlusRes.length - i - 1].distanceTo(target) -
+          anglesMinusRes[anglesMinusRes.length - i - 1].distanceTo(target);
+      }
+
+      for (let i = 0; i < this.angles.length; i++)
+        this.angles[i] -= gradients[i];
+
+      ++iteration;
+
+      setTimeout(() => {
+        this.drawAngles();
+      }, 10);
+    }
   }
 
   public init(): void {
     this.frame.nativeElement.innerHTML = '';
     this.points = [];
-    this.angles = new Array(this.bones).fill(0);
-    console.log(this.angles);
+    this.angles = new Array(this.bones + 1).fill(0);
 
     this.prepareScene();
   }
@@ -81,23 +117,40 @@ export class InverseKinematicsComponent implements AfterViewInit {
 
     this.scene = new THREE.Scene();
 
-    for (let i = 0; i < this.angles.length + 1; i++)
-      this.points.push(new THREE.Vector3(i * this.length, 0));
+    for (let i = 0; i < this.angles.length; i++)
+      this.points.push(new THREE.Vector3((i + 1) * this.length, 0));
 
     this.drawLines();
     this.renderer.render(this.scene, this.camera);
-
-    this.drawAngles();
   }
 
   private drawAngles(): void {
-    for (let i = 0; i < this.points.length; i++) {
-      this.points[i].applyAxisAngle(new THREE.Vector3(0, 0, 1), i + 5);
+    let axis = new THREE.Vector3(0, 0, 1);
+    for (let i = 0; i < this.points.length; i += 2) {
+      if (!this.angles[i]) continue;
+      this.points[i].applyAxisAngle(axis, this.angles[i]);
+      axis = this.points[i].clone().normalize();
     }
 
     this.scene.remove.apply(this.scene, this.scene.children);
     this.drawLines();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  private getGradients(angles: Array<number>): Array<THREE.Vector3> {
+    const newPoints: Array<THREE.Vector3> = [];
+    let axis = new THREE.Vector3(0, 0, 1);
+
+    for (const point of this.points) {
+      newPoints.push(point.clone());
+    }
+
+    for (let i = 0; i < newPoints.length; i++) {
+      newPoints[i].applyAxisAngle(axis, angles[i]);
+      axis = newPoints[i].clone().normalize();
+    }
+
+    return newPoints;
   }
 
   private drawLines(): void {
