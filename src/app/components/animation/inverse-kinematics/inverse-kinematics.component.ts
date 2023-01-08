@@ -46,6 +46,26 @@ export class InverseKinematicsComponent implements AfterViewInit {
     this.settingsVisible = !this.settingsVisible;
   }
 
+  public mouseEnter(event: MouseEvent): void {
+    let dotGeometry = new THREE.BufferGeometry();
+    dotGeometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(
+        [
+          -(this.frame.nativeElement.offsetWidth / 2 - event.offsetX) / 7,
+          (this.frame.nativeElement.offsetHeight / 2 - event.offsetY) / 7,
+          0,
+        ],
+        3
+      )
+    );
+    let dotMaterial = new THREE.PointsMaterial({ size: 5, color: 0x00ff00 });
+    let dot = new THREE.Points(dotGeometry, dotMaterial);
+    this.scene.add(dot);
+
+    this.renderer.render(this.scene, this.camera);
+  }
+
   public init(): void {
     this.frame.nativeElement.innerHTML = '';
     this.points = [];
