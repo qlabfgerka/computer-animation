@@ -48,21 +48,62 @@ export class InverseKinematicsComponent implements AfterViewInit {
 
   public init(): void {
     this.frame.nativeElement.innerHTML = '';
-    this.angles = new Array(this.bones + 1).fill(0);
+    this.points = [];
+    this.angles = new Array(this.bones).fill(0);
     console.log(this.angles);
 
     this.prepareScene();
   }
 
   private prepareScene(): void {
-    this.renderer = new THREE.WebGLRenderer();
-    this.renderer.setSize(
-      this.frame.nativeElement.offsetWidth - 5,
-      this.frame.nativeElement.offsetHeight - 4
-    );
-    this.renderer.setClearColor(0xffffff);
-    this.frame.nativeElement.appendChild(this.renderer.domElement);
+    this.initRenderer();
+    this.initCamera();
 
+    this.scene = new THREE.Scene();
+
+    for (let i = 0; i < this.angles.length + 1; i++)
+      this.points.push(new THREE.Vector3(i * this.length, 0));
+
+    this.drawLines();
+    this.renderer.render(this.scene, this.camera);
+
+    this.drawAngles();
+  }
+
+  private drawAngles(): void {
+    for (let i = 0; i < this.points.length; i++) {
+      this.points[i].applyAxisAngle(new THREE.Vector3(0, 0, 1), i + 5);
+    }
+
+    this.scene.remove.apply(this.scene, this.scene.children);
+    this.drawLines();
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  private drawLines(): void {
+    for (let i = 0; i < this.points.length - 1; i++) {
+      const points = [this.points[i], this.points[i + 1]];
+
+      const material = new THREE.LineBasicMaterial({
+        color: this.getRandomColor(),
+      });
+
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      this.scene.add(new THREE.Line(geometry, material));
+    }
+  }
+
+  private copy(value: any): any {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  private getRandomColor(): THREE.ColorRepresentation {
+    const color = new THREE.Color(0xffffff);
+    color.setHex(Math.random() * 0xffffff);
+    return color;
+  }
+
+  private initCamera(): void {
     this.camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
@@ -71,37 +112,15 @@ export class InverseKinematicsComponent implements AfterViewInit {
     );
     this.camera.position.set(0, 0, 100);
     this.camera.lookAt(0, 0, 0);
-
-    this.scene = new THREE.Scene();
-
-    for (let i = 0; i < this.angles.length; i++)
-      this.points.push(new THREE.Vector3(i * this.length, 0));
-
-    this.scene.add(this.createLines());
-    this.renderer.render(this.scene, this.camera);
   }
 
-  private drawAngles(): void {
-    for (let i = 0; i < this.points.length; i++) {
-      this.points[i].applyAxisAngle(new THREE.Vector3(0, 0, 1), i * 5);
-    }
-
-    this.scene.remove.apply(this.scene, this.scene.children);
-    this.scene.add(this.createLines());
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  private createLines(): THREE.Line {
-    const material = new THREE.LineBasicMaterial({
-      color: 0x000000,
-    });
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(this.points);
-
-    return new THREE.Line(geometry, material);
-  }
-
-  private copy(value: any): any {
-    return JSON.parse(JSON.stringify(value));
+  private initRenderer(): void {
+    this.renderer = new THREE.WebGLRenderer();
+    this.renderer.setSize(
+      this.frame.nativeElement.offsetWidth - 5,
+      this.frame.nativeElement.offsetHeight - 4
+    );
+    this.renderer.setClearColor(0xffffff);
+    this.frame.nativeElement.appendChild(this.renderer.domElement);
   }
 }
