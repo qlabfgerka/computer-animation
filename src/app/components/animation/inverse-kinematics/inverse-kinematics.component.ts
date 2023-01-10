@@ -104,8 +104,17 @@ export class InverseKinematicsComponent implements AfterViewInit {
         const anglesPlusRes = this.drawLines(anglesPlus, false);
         const anglesMinusRes = this.drawLines(anglesMinus, false);
 
-        gradients[i] =
-          anglesPlusRes.distanceTo(target) - anglesMinusRes.distanceTo(target);
+        let plusErr =
+          anglesPlusRes.distanceTo(target) * (-9 * this.weights[i] + 10);
+        let minusErr =
+          anglesMinusRes.distanceTo(target) * (-9 * this.weights[i] + 10);
+
+        if (Math.abs(anglesPlus[i]) > Math.abs(this.constraints[i]))
+          plusErr *= 100;
+        if (Math.abs(anglesMinus[i]) > Math.abs(this.constraints[i]))
+          minusErr *= 100;
+
+        gradients[i] = plusErr - minusErr;
       }
 
       for (let i = 0; i < this.angles.length; i++)
