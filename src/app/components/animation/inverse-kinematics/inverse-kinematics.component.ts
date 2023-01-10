@@ -5,6 +5,8 @@ import {
   HostListener,
   ViewChild,
 } from '@angular/core';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { ConstraintsDialogComponent } from 'src/app/shared/dialogs/constraints-dialog/constraints-dialog.component';
 import * as THREE from 'three';
 
 @Component({
@@ -22,6 +24,8 @@ export class InverseKinematicsComponent implements AfterViewInit {
   public g: number = 5;
 
   private angles: Array<number> = [];
+  private constraints: Array<number> = [];
+  private weights: Array<number> = [];
   private colors: Array<THREE.ColorRepresentation> = [];
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
@@ -33,7 +37,7 @@ export class InverseKinematicsComponent implements AfterViewInit {
     this.prepareScene();
   }
 
-  constructor() {}
+  constructor(private readonly dialog: MatDialog) {}
 
   ngAfterViewInit(): void {
     this.init();
@@ -43,6 +47,25 @@ export class InverseKinematicsComponent implements AfterViewInit {
 
   public toggleVisibility(): void {
     this.settingsVisible = !this.settingsVisible;
+  }
+
+  public openSettings(): void {
+    const constraintsDialogRef = this.dialog.open(ConstraintsDialogComponent, {
+      data: {
+        constraintsCount: this.bones,
+        angles: this.angles,
+        constraints: this.constraints,
+        weights: this.weights,
+      },
+    });
+
+    constraintsDialogRef.afterClosed().subscribe((data: any) => {
+      if (data) {
+        this.angles = data.angles;
+        this.constraints = data.constraints;
+        this.weights = data.weights;
+      }
+    });
   }
 
   public mouseEnter(event: MouseEvent): void {
@@ -100,6 +123,8 @@ export class InverseKinematicsComponent implements AfterViewInit {
   public init(): void {
     this.frame.nativeElement.innerHTML = '';
     this.angles = new Array(this.bones).fill(0);
+    this.constraints = new Array(this.bones).fill(360);
+    this.weights = new Array(this.bones).fill(1);
     this.colors = new Array<THREE.ColorRepresentation>();
 
     for (let i = 0; i <= this.bones; i++)
