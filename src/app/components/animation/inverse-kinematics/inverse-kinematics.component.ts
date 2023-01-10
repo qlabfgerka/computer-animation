@@ -6,7 +6,6 @@ import {
   ViewChild,
 } from '@angular/core';
 import * as THREE from 'three';
-import { Vector3 } from 'three';
 
 @Component({
   selector: 'app-inverse-kinematics',
@@ -19,12 +18,11 @@ export class InverseKinematicsComponent implements AfterViewInit {
   public settingsVisible: boolean = true;
   public bones: number = 4;
   public maxIterations: number = 1000;
-  public error: number = 0.01;
+  public error: number = 1.5;
   public g: number = 5;
 
-  private points: Array<THREE.Vector3> = [];
   private angles: Array<number> = [];
-  private length: number = 5;
+  private colors: Array<THREE.ColorRepresentation> = [];
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
   private camera!: THREE.PerspectiveCamera;
@@ -48,7 +46,7 @@ export class InverseKinematicsComponent implements AfterViewInit {
   }
 
   public mouseEnter(event: MouseEvent): void {
-    /*let dotGeometry = new THREE.BufferGeometry();
+    let dotGeometry = new THREE.BufferGeometry();
     dotGeometry.setAttribute(
       'position',
       new THREE.Float32BufferAttribute(
@@ -62,7 +60,6 @@ export class InverseKinematicsComponent implements AfterViewInit {
     );
     let dotMaterial = new THREE.PointsMaterial({ size: 5, color: 0x00ff00 });
     let dot = new THREE.Points(dotGeometry, dotMaterial);
-    this.scene.add(dot);*/
 
     const target = new THREE.Vector3(
       -(this.frame.nativeElement.offsetWidth / 2 - event.offsetX) / 7,
@@ -71,25 +68,21 @@ export class InverseKinematicsComponent implements AfterViewInit {
     );
 
     let iteration = 0;
-    while (
-      Math.abs(target.distanceTo(this.points[this.points.length - 1])) >
-        this.error &&
-      iteration < this.maxIterations
-    ) {
+    let error = Math.abs(target.distanceTo(this.drawLines(this.angles, false)));
+    while (error > this.error && iteration < this.maxIterations) {
       const gradients = [];
-      const anglesPlus = this.copy(this.angles);
-      const anglesMinus = this.copy(this.angles);
 
       for (let i = 0; i < this.angles.length; i++) {
+        const anglesPlus = this.copy(this.angles);
+        const anglesMinus = this.copy(this.angles);
         anglesPlus[i] = anglesPlus[i] + this.g;
         anglesMinus[i] = anglesMinus[i] - this.g;
 
-        const anglesPlusRes = this.getGradients(anglesPlus);
-        const anglesMinusRes = this.getGradients(anglesMinus);
+        const anglesPlusRes = this.drawLines(anglesPlus, false);
+        const anglesMinusRes = this.drawLines(anglesMinus, false);
 
         gradients[i] =
-          anglesPlusRes[anglesPlusRes.length - i - 1].distanceTo(target) -
-          anglesMinusRes[anglesMinusRes.length - i - 1].distanceTo(target);
+          anglesPlusRes.distanceTo(target) - anglesMinusRes.distanceTo(target);
       }
 
       for (let i = 0; i < this.angles.length; i++)
@@ -97,16 +90,20 @@ export class InverseKinematicsComponent implements AfterViewInit {
 
       ++iteration;
 
-      setTimeout(() => {
-        this.drawAngles();
-      }, 10);
+      this.scene.remove.apply(this.scene, this.scene.children);
+      this.scene.add(dot);
+      error = Math.abs(target.distanceTo(this.drawLines(this.angles)));
+      this.renderer.render(this.scene, this.camera);
     }
   }
 
   public init(): void {
     this.frame.nativeElement.innerHTML = '';
-    this.points = [];
-    this.angles = new Array(this.bones + 1).fill(0);
+    this.angles = new Array(this.bones).fill(0);
+    this.colors = new Array<THREE.ColorRepresentation>();
+
+    for (let i = 0; i <= this.bones; i++)
+      this.colors.push(this.getRandomColor());
 
     this.prepareScene();
   }
@@ -117,53 +114,45 @@ export class InverseKinematicsComponent implements AfterViewInit {
 
     this.scene = new THREE.Scene();
 
-    for (let i = 0; i < this.angles.length; i++)
-      this.points.push(new THREE.Vector3((i + 1) * this.length, 0));
-
-    this.drawLines();
+    this.drawLines(this.angles);
     this.renderer.render(this.scene, this.camera);
   }
 
-  private drawAngles(): void {
-    let axis = new THREE.Vector3(0, 0, 1);
-    for (let i = 0; i < this.points.length; i += 2) {
-      if (!this.angles[i]) continue;
-      this.points[i].applyAxisAngle(axis, this.angles[i]);
-      axis = this.points[i].clone().normalize();
-    }
+  private drawLines(
+    angles: Array<number>,
+    draw: boolean = true
+  ): THREE.Vector3 {
+    if (!angles) return null!;
 
-    this.scene.remove.apply(this.scene, this.scene.children);
-    this.drawLines();
-    this.renderer.render(this.scene, this.camera);
-  }
+    let currentPosition = new THREE.Vector3(0, 0, 0);
+    let currentRotation = new THREE.Euler(
+      0,
+      0,
+      THREE.MathUtils.degToRad(angles[0]),
+      'XYZ'
+    );
 
-  private getGradients(angles: Array<number>): Array<THREE.Vector3> {
-    const newPoints: Array<THREE.Vector3> = [];
-    let axis = new THREE.Vector3(0, 0, 1);
+    for (let i = 1; i <= angles.length; i++) {
+      let nextPosition = new THREE.Vector3(10, 0, 0);
+      nextPosition.applyEuler(currentRotation);
+      nextPosition.add(currentPosition);
 
-    for (const point of this.points) {
-      newPoints.push(point.clone());
-    }
-
-    for (let i = 0; i < newPoints.length; i++) {
-      newPoints[i].applyAxisAngle(axis, angles[i]);
-      axis = newPoints[i].clone().normalize();
-    }
-
-    return newPoints;
-  }
-
-  private drawLines(): void {
-    for (let i = 0; i < this.points.length - 1; i++) {
-      const points = [this.points[i], this.points[i + 1]];
+      let lineGeometry = new THREE.BufferGeometry();
+      let positions = [currentPosition, nextPosition];
+      lineGeometry.setFromPoints(positions);
 
       const material = new THREE.LineBasicMaterial({
-        color: this.getRandomColor(),
+        color: this.colors[i],
       });
 
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      this.scene.add(new THREE.Line(geometry, material));
+      let line = new THREE.Line(lineGeometry, material);
+      if (draw) this.scene.add(line);
+
+      currentPosition = nextPosition;
+      currentRotation.z += THREE.MathUtils.degToRad(angles[i]);
     }
+
+    return currentPosition;
   }
 
   private copy(value: any): any {
