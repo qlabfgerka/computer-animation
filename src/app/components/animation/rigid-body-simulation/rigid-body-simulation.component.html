@@ -50,6 +50,11 @@
     />
     <mat-icon matSuffix (click)="openSphereSettings()">mode_edit</mat-icon>
   </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Mesh size</mat-label>
+    <input matInput [(ngModel)]="size" type="number" (ngModelChange)="init()" />
+  </mat-form-field>
 </div>
 
 <div class="flexbox height">

@@ -26,6 +26,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   public angle: number = 12;
   public cubes: number = 10;
   public spheres: number = 10;
+  public size: number = 50;
 
   private world: OIMO.World;
   private objects!: Array<{ body: any; mesh: THREE.Mesh }>;
@@ -120,6 +121,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
     this.scene = new THREE.Scene();
 
     this.initMesh();
+    this.initLight();
 
     this.initWorld();
     this.createObject();
@@ -152,12 +154,28 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   }
 
   private initMesh(): void {
-    let meshGeometry = new THREE.BoxGeometry(50, 0.5, 50);
-    let meshMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    let meshGeometry = new THREE.BoxGeometry(this.size, 0.5, this.size);
+    let meshMaterial = new THREE.MeshPhongMaterial({
+      color: this.getRandomColor(),
+    });
     this.mesh = new THREE.Mesh(meshGeometry, meshMaterial);
     this.mesh.position.set(0, -0.25, 0);
     this.mesh.rotateZ(THREE.MathUtils.degToRad(this.angle));
+    this.mesh.receiveShadow = true;
     this.scene.add(this.mesh);
+  }
+
+  private initLight(): void {
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(0, 10, 0); //default; light shining from top
+    light.castShadow = true; // default false
+    this.scene.add(light);
+
+    //Set up shadow properties for the light
+    light.shadow.mapSize.width = 512; // default
+    light.shadow.mapSize.height = 512; // default
+    light.shadow.camera.near = 0.5; // default
+    light.shadow.camera.far = 500; // default
   }
 
   private initWorld(): void {
@@ -173,7 +191,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
 
     this.worldMesh = {
       type: 'box',
-      size: [50, 0.5, 50],
+      size: [this.size, 0.5, this.size],
       pos: [0, -0.25, 0],
       rot: [0, 0, this.angle],
       density: 1,
@@ -199,7 +217,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
       if (object.body.getPosition().y < -100)
         object.body.resetPosition(
           this.getRandomIntInclusive(-10, 10),
-          this.getRandomIntInclusive(40, 60),
+          this.getRandomIntInclusive(this.size - 10, this.size + 10),
           this.getRandomIntInclusive(-10, 10)
         );
     });
@@ -211,7 +229,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
 
   private generateObject(type: number): void {
     let geometry: THREE.BoxGeometry | THREE.SphereGeometry;
-    const material = new THREE.MeshBasicMaterial({
+    const material = new THREE.MeshPhongMaterial({
       color: this.getRandomColor(),
     });
 
@@ -236,7 +254,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
           : [this.sphereSize, this.sphereSize, this.sphereSize], // size of shape
       pos: [
         this.getRandomIntInclusive(-10, 10),
-        this.getRandomIntInclusive(40, 60),
+        this.getRandomIntInclusive(this.size - 10, this.size + 10),
         this.getRandomIntInclusive(-10, 10),
       ], // start position in meters
       rot: [0, 0, 90], // start rotation in degree
@@ -249,6 +267,10 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
     });
 
     const mesh = new THREE.Mesh(geometry!, material);
+
+    mesh.castShadow = true; //default is false
+    mesh.receiveShadow = false; //default
+
     this.scene.add(mesh);
 
     this.objects.push({ body, mesh });
