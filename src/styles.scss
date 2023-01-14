@@ -9,15 +9,6 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
 }
 
-html,
-body {
-  height: 100%;
-}
-body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-}
-
 .flexbox {
   display: flex;
   justify-content: center;
@@ -40,8 +31,4 @@ body {
 
 .margin-bottom {
   margin-bottom: 1rem;
-}
-
-mat-slider {
-  width: 30rem;
 }

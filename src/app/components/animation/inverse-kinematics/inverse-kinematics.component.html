@@ -1,1 +1,39 @@
-<p>inverse-kinematics works!</p>
+<div class="flexbox margin-top margin-bottom">
+  <button
+    mat-raised-button
+    color="primary"
+    class="margin-right"
+    (click)="init()"
+  >
+    APPLY
+  </button>
+  <button mat-raised-button color="primary" (click)="toggleVisibility()">
+    {{ settingsVisible ? "HIDE" : "SHOW" }}
+  </button>
+</div>
+<div class="flexbox margin-top" *ngIf="settingsVisible">
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Bones</mat-label>
+    <input matInput [(ngModel)]="bones" type="number" />
+    <mat-icon matSuffix (click)="openSettings()">mode_edit</mat-icon>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Max iterations</mat-label>
+    <input matInput [(ngModel)]="maxIterations" type="number" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Error</mat-label>
+    <input matInput [(ngModel)]="error" type="number" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>G parameter</mat-label>
+    <input matInput [(ngModel)]="g" type="number" />
+  </mat-form-field>
+</div>
+
+<div class="flexbox height">
+  <div class="frame" (mousemove)="mouseEnter($event)" #frame></div>
+</div>
