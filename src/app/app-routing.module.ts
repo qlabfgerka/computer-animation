@@ -9,6 +9,13 @@ const routes: Routes = [
         './components/animation/inverse-kinematics/inverse-kinematics.module'
       ).then((m) => m.InverseKinematicsModule),
   },
+  {
+    path: `rigid-body`,
+    loadChildren: () =>
+      import(
+        './components/animation/rigid-body-simulation/rigid-body-simulation.module'
+      ).then((m) => m.RigidBodySimulationModule),
+  },
 ];
 
 @NgModule({

@@ -5,7 +5,7 @@ import {
   HostListener,
   ViewChild,
 } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ConstraintsDialogComponent } from 'src/app/shared/dialogs/constraints-dialog/constraints-dialog.component';
 import * as THREE from 'three';
 
