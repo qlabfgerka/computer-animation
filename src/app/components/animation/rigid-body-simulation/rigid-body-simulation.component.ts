@@ -29,6 +29,7 @@ export class RigidBodySimulationComponent implements AfterViewInit {
 
   private world: OIMO.World;
   private objects!: Array<{ body: any; mesh: THREE.Mesh }>;
+  private draggable!: THREE.Object3D;
   private intersected: any = null;
   private mouseClick: boolean = false;
 
@@ -122,17 +123,39 @@ export class RigidBodySimulationComponent implements AfterViewInit {
     this.pointer.y =
       -((event.clientY - rect.top) / canvas.offsetHeight) * 2 + 1;
 
-    if (!this.mouseClick) return;
+    if (!this.mouseClick || !this.intersected) return;
 
-    this.generateObject(
+    //console.log('drag');
+
+    //this.intersected.position.x = this.pointer.x;
+    //this.intersected.position.y = this.pointer.y;
+
+    /*this.generateObject(
       this.getRandomIntInclusive(0, 1),
       -(this.frame.nativeElement.offsetWidth / 2 - event.offsetX) / 7,
       (this.frame.nativeElement.offsetHeight / 2 - event.offsetY) / 7
-    );
+    );*/
   }
 
-  public mouseDown(): void {
+  public mouseDown(event: MouseEvent): void {
+    if (this.draggable != null) {
+      this.draggable = null!;
+      return;
+    }
+
+    const canvas = this.frame.nativeElement.children[0];
+    const rect = canvas.getBoundingClientRect();
     this.mouseClick = true;
+
+    const clickPosition: THREE.Vector2 = new THREE.Vector2(
+      ((event.clientX - rect.left) / canvas.offsetWidth) * 2 - 1,
+      -((event.clientY - rect.top) / canvas.offsetHeight) * 2 + 1
+    );
+
+    const found = this.intersect(clickPosition);
+    if (found.length > 0) {
+      this.draggable = found[0].object;
+    }
   }
 
   public mouseUp(): void {
@@ -234,6 +257,7 @@ export class RigidBodySimulationComponent implements AfterViewInit {
   }
 
   private animate() {
+    this.dragObject();
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
     requestAnimationFrame(() => this.animate());
@@ -343,5 +367,27 @@ export class RigidBodySimulationComponent implements AfterViewInit {
     const color = new THREE.Color(0xffffff);
     color.setHex(Math.random() * 0xffffff);
     return color;
+  }
+
+  private intersect(position: THREE.Vector2 | null = null): any {
+    this.raycaster.setFromCamera(
+      position ? position : this.pointer,
+      this.camera
+    );
+    return this.raycaster.intersectObjects(this.scene.children, false);
+  }
+
+  private dragObject() {
+    if (this.draggable != null) {
+      const found = this.intersect(this.pointer);
+      if (found.length > 0) {
+        for (let i = 0; i < found.length; i++) {
+          console.log('hello');
+          let target = found[i].point;
+          this.draggable.position.x = target.x;
+          this.draggable.position.z = target.z;
+        }
+      }
+    }
   }
 }
