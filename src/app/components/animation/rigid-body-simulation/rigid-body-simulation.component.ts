@@ -3,7 +3,6 @@ import {
   Component,
   ElementRef,
   HostListener,
-  OnInit,
   ViewChild,
 } from '@angular/core';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -19,7 +18,7 @@ import { SettingsDialogComponent } from 'src/app/shared/dialogs/settings-dialog/
   templateUrl: './rigid-body-simulation.component.html',
   styleUrls: ['./rigid-body-simulation.component.scss'],
 })
-export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
+export class RigidBodySimulationComponent implements AfterViewInit {
   @ViewChild('frame', { static: false }) private readonly frame!: ElementRef;
 
   public settingsVisible: boolean = true;
@@ -37,6 +36,8 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   private renderer!: THREE.WebGLRenderer;
   private camera!: THREE.PerspectiveCamera;
   private controls!: OrbitControls;
+  private raycaster!: THREE.Raycaster;
+  private pointer!: THREE.Vector2;
 
   private mesh!: THREE.Mesh;
   private worldMesh: any;
@@ -50,8 +51,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
 
   @HostListener('window:resize', ['$event'])
   private onResize(event: any): void {
-    this.frame.nativeElement.innerHTML = '';
-    this.prepareScene();
+    this.init();
   }
 
   constructor(private readonly dialog: MatDialog) {}
@@ -59,8 +59,6 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.init();
   }
-
-  ngOnInit(): void {}
 
   public formatLabel(value: number): string {
     return `${value}°`;
@@ -117,6 +115,13 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   }
 
   public mouseMove(event: MouseEvent): void {
+    const canvas = this.frame.nativeElement.children[0];
+    const rect = canvas.getBoundingClientRect();
+
+    this.pointer.x = ((event.clientX - rect.left) / canvas.offsetWidth) * 2 - 1;
+    this.pointer.y =
+      -((event.clientY - rect.top) / canvas.offsetHeight) * 2 + 1;
+
     if (!this.mouseClick) return;
 
     this.generateObject(
@@ -139,6 +144,8 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
     this.initCamera();
 
     this.scene = new THREE.Scene();
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2();
 
     this.initMesh();
     this.initLight();
@@ -166,8 +173,8 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   private initRenderer(): void {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(
-      this.frame.nativeElement.offsetWidth - 5,
-      this.frame.nativeElement.offsetHeight - 4
+      this.frame.nativeElement.offsetWidth,
+      this.frame.nativeElement.offsetHeight
     );
     this.renderer.setClearColor(0xffffff);
     this.frame.nativeElement.appendChild(this.renderer.domElement);
@@ -227,6 +234,8 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
   }
 
   private animate() {
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+
     requestAnimationFrame(() => this.animate());
     this.world.step();
 
@@ -241,6 +250,30 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
           this.getRandomIntInclusive(-10, 10)
         );
     });
+
+    const intersects = this.raycaster.intersectObjects(
+      this.scene.children,
+      false
+    );
+
+    if (intersects.length > 0) {
+      if (this.intersected != intersects[0].object) {
+        if (this.intersected)
+          this.intersected.material.emissive.setHex(
+            this.intersected.currentHex
+          );
+
+        this.intersected = intersects[0].object;
+        this.intersected.currentHex =
+          this.intersected.material.emissive.getHex();
+        this.intersected.material.emissive.setHex(0xff0000);
+      }
+    } else {
+      if (this.intersected)
+        this.intersected.material.emissive.setHex(this.intersected.currentHex);
+
+      this.intersected = null;
+    }
 
     //this.controls.update();
 

@@ -213,8 +213,8 @@ export class InverseKinematicsComponent implements AfterViewInit {
   private initRenderer(): void {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(
-      this.frame.nativeElement.offsetWidth - 5,
-      this.frame.nativeElement.offsetHeight - 4
+      this.frame.nativeElement.offsetWidth,
+      this.frame.nativeElement.offsetHeight
     );
     this.renderer.setClearColor(0xffffff);
     this.frame.nativeElement.appendChild(this.renderer.domElement);
