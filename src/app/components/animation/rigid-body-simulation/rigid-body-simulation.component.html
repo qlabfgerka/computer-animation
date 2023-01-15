@@ -58,5 +58,11 @@
 </div>
 
 <div class="flexbox height">
-  <div class="frame" #frame></div>
+  <div
+    class="frame"
+    (mousemove)="mouseMove($event)"
+    (mousedown)="mouseDown()"
+    (mouseup)="mouseUp()"
+    #frame
+  ></div>
 </div>

@@ -30,6 +30,8 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
 
   private world: OIMO.World;
   private objects!: Array<{ body: any; mesh: THREE.Mesh }>;
+  private intersected: any = null;
+  private mouseClick: boolean = false;
 
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
@@ -114,6 +116,24 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
     });
   }
 
+  public mouseMove(event: MouseEvent): void {
+    if (!this.mouseClick) return;
+
+    this.generateObject(
+      this.getRandomIntInclusive(0, 1),
+      -(this.frame.nativeElement.offsetWidth / 2 - event.offsetX) / 7,
+      (this.frame.nativeElement.offsetHeight / 2 - event.offsetY) / 7
+    );
+  }
+
+  public mouseDown(): void {
+    this.mouseClick = true;
+  }
+
+  public mouseUp(): void {
+    this.mouseClick = false;
+  }
+
   private prepareScene(): void {
     this.initRenderer();
     this.initCamera();
@@ -139,8 +159,8 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
     this.camera.position.set(-100, 75, 120);
     this.camera.lookAt(0, 10, 0);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.update();
+    //this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    //this.controls.update();
   }
 
   private initRenderer(): void {
@@ -155,7 +175,7 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
 
   private initMesh(): void {
     let meshGeometry = new THREE.BoxGeometry(this.size, 0.5, this.size);
-    let meshMaterial = new THREE.MeshPhongMaterial({
+    let meshMaterial = new THREE.MeshLambertMaterial({
       color: this.getRandomColor(),
     });
     this.mesh = new THREE.Mesh(meshGeometry, meshMaterial);
@@ -222,14 +242,18 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
         );
     });
 
-    this.controls.update();
+    //this.controls.update();
 
     this.renderer.render(this.scene, this.camera);
   }
 
-  private generateObject(type: number): void {
+  private generateObject(
+    type: number,
+    x: number | null = null,
+    z: number | null = null
+  ): void {
     let geometry: THREE.BoxGeometry | THREE.SphereGeometry;
-    const material = new THREE.MeshPhongMaterial({
+    const material = new THREE.MeshLambertMaterial({
       color: this.getRandomColor(),
     });
 
@@ -253,9 +277,9 @@ export class RigidBodySimulationComponent implements OnInit, AfterViewInit {
           ? [this.cubeSize, this.cubeSize, this.cubeSize]
           : [this.sphereSize, this.sphereSize, this.sphereSize], // size of shape
       pos: [
-        this.getRandomIntInclusive(-10, 10),
+        x ? x : this.getRandomIntInclusive(-10, 10),
         this.getRandomIntInclusive(this.size - 10, this.size + 10),
-        this.getRandomIntInclusive(-10, 10),
+        z ? z : this.getRandomIntInclusive(-10, 10),
       ], // start position in meters
       rot: [0, 0, 90], // start rotation in degree
       move: true, // dynamic or static
