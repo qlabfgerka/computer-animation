@@ -26,9 +26,10 @@ export class RigidBodySimulationComponent implements AfterViewInit {
   public cubes: number = 10;
   public spheres: number = 10;
   public size: number = 50;
+  public spawnEnabled: boolean = false;
 
   private world: OIMO.World;
-  private objects!: Array<{ body: any; mesh: THREE.Mesh }>;
+  private meshes!: Array<THREE.Mesh>;
   private draggable!: THREE.Object3D;
   private intersected: any = null;
   private mouseClick: boolean = false;
@@ -41,7 +42,7 @@ export class RigidBodySimulationComponent implements AfterViewInit {
   private pointer!: THREE.Vector2;
 
   private mesh!: THREE.Mesh;
-  private worldMesh: any;
+  private worldMesh: OIMO.RigidBody;
 
   private cubeRestitution: number = 1;
   private cubeFriction: number = 0.2;
@@ -69,8 +70,13 @@ export class RigidBodySimulationComponent implements AfterViewInit {
     this.settingsVisible = !this.settingsVisible;
   }
 
+  public spawnEnabledChanged(): void {
+    if (this.spawnEnabled) this.controls.enabled = false;
+    else this.controls.enabled = true;
+  }
+
   public init(): void {
-    this.objects = [];
+    this.meshes = [];
     this.frame.nativeElement.innerHTML = '';
     this.prepareScene();
   }
@@ -123,18 +129,13 @@ export class RigidBodySimulationComponent implements AfterViewInit {
     this.pointer.y =
       -((event.clientY - rect.top) / canvas.offsetHeight) * 2 + 1;
 
-    if (!this.mouseClick || !this.intersected) return;
+    if (!this.mouseClick || !this.spawnEnabled) return;
 
-    //console.log('drag');
-
-    //this.intersected.position.x = this.pointer.x;
-    //this.intersected.position.y = this.pointer.y;
-
-    /*this.generateObject(
+    this.generateObject(
       this.getRandomIntInclusive(0, 1),
       -(this.frame.nativeElement.offsetWidth / 2 - event.offsetX) / 7,
       (this.frame.nativeElement.offsetHeight / 2 - event.offsetY) / 7
-    );*/
+    );
   }
 
   public mouseDown(event: MouseEvent): void {
@@ -160,6 +161,13 @@ export class RigidBodySimulationComponent implements AfterViewInit {
 
   public mouseUp(): void {
     this.mouseClick = false;
+    if (!this.spawnEnabled) this.controls.enabled = true;
+
+    for (let i = 0; i < this.meshes.length; i++) {
+      this.meshes[i].userData['drag'] = false;
+      this.meshes[i].userData['body'].isKinematic = false;
+      this.meshes[i].userData['body'].awake();
+    }
   }
 
   private prepareScene(): void {
@@ -189,8 +197,8 @@ export class RigidBodySimulationComponent implements AfterViewInit {
     this.camera.position.set(-100, 75, 120);
     this.camera.lookAt(0, 10, 0);
 
-    //this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    //this.controls.update();
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.update();
   }
 
   private initRenderer(): void {
@@ -239,16 +247,17 @@ export class RigidBodySimulationComponent implements AfterViewInit {
       gravity: [0, -9.8, 0], //fizika na Zemlji, za Mars uporabite drugačne konstante
     });
 
-    this.worldMesh = {
+    this.worldMesh = this.world.add({
       type: 'box',
       size: [this.size, 0.5, this.size],
       pos: [0, -0.25, 0],
       rot: [0, 0, this.angle],
       density: 1,
       move: false,
-    };
+    });
 
-    this.world.add(this.worldMesh);
+    this.mesh.userData['body'] = this.worldMesh;
+    this.mesh.userData['drag'] = false;
   }
 
   private createObject(): void {
@@ -263,22 +272,21 @@ export class RigidBodySimulationComponent implements AfterViewInit {
     requestAnimationFrame(() => this.animate());
     this.world.step();
 
-    this.objects.forEach((object) => {
-      object.mesh.position.copy(object.body.getPosition());
-      object.mesh.quaternion.copy(object.body.getQuaternion());
+    this.meshes.forEach((mesh: THREE.Mesh) => {
+      if (mesh.userData['drag']) return;
 
-      if (object.body.getPosition().y < -100)
-        object.body.resetPosition(
+      mesh.position.copy(mesh.userData['body'].getPosition());
+      mesh.quaternion.copy(mesh.userData['body'].getQuaternion());
+
+      if (mesh.userData['body'].getPosition().y < -100)
+        mesh.userData['body'].resetPosition(
           this.getRandomIntInclusive(-10, 10),
           this.getRandomIntInclusive(this.size - 10, this.size + 10),
           this.getRandomIntInclusive(-10, 10)
         );
     });
 
-    const intersects = this.raycaster.intersectObjects(
-      this.scene.children,
-      false
-    );
+    const intersects = this.intersect();
 
     if (intersects.length > 0) {
       if (this.intersected != intersects[0].object) {
@@ -299,7 +307,7 @@ export class RigidBodySimulationComponent implements AfterViewInit {
       this.intersected = null;
     }
 
-    //this.controls.update();
+    this.controls.update();
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -351,10 +359,12 @@ export class RigidBodySimulationComponent implements AfterViewInit {
 
     mesh.castShadow = true; //default is false
     mesh.receiveShadow = false; //default
+    mesh.userData['drag'] = false;
+    mesh.userData['body'] = body;
 
     this.scene.add(mesh);
 
-    this.objects.push({ body, mesh });
+    this.meshes.push(mesh);
   }
 
   private getRandomIntInclusive(min: number, max: number) {
@@ -378,16 +388,23 @@ export class RigidBodySimulationComponent implements AfterViewInit {
   }
 
   private dragObject() {
-    if (this.draggable != null) {
-      const found = this.intersect(this.pointer);
-      if (found.length > 0) {
-        for (let i = 0; i < found.length; i++) {
-          console.log('hello');
-          let target = found[i].point;
-          this.draggable.position.x = target.x;
-          this.draggable.position.z = target.z;
-        }
-      }
+    if (!this.draggable || !this.mouseClick || this.spawnEnabled) return;
+
+    this.controls.enabled = false;
+
+    const found = this.intersect(this.pointer);
+
+    if (found.length === 0) return;
+
+    for (let i = 0; i < found.length; i++) {
+      let target = found[i].point;
+      this.draggable.position.x = target.x;
+      this.draggable.position.z = target.z;
+
+      this.draggable.userData['body'].setQuaternion(this.draggable.quaternion);
+      this.draggable.userData['body'].setPosition(this.draggable.position);
+
+      this.draggable.userData['drag'] = true;
     }
   }
 }

@@ -29,6 +29,15 @@
 
   <div class="break"></div>
 
+  <mat-checkbox
+    [(ngModel)]="spawnEnabled"
+    (ngModelChange)="spawnEnabledChanged()"
+  >
+    Spawn Enabled
+  </mat-checkbox>
+
+  <div class="break"></div>
+
   <mat-form-field appearance="fill" class="margin-right">
     <mat-label>Cubes</mat-label>
     <input

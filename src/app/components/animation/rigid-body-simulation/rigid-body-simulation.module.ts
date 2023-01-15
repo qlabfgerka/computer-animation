@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatIconModule } from '@angular/material/icon';
 import { SettingsDialogModule } from 'src/app/shared/dialogs/settings-dialog/settings-dialog.module';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @NgModule({
   declarations: [RigidBodySimulationComponent],
@@ -23,6 +24,7 @@ import { SettingsDialogModule } from 'src/app/shared/dialogs/settings-dialog/set
     MatSliderModule,
     MatIconModule,
     SettingsDialogModule,
+    MatCheckboxModule,
   ],
 })
 export class RigidBodySimulationModule {}
