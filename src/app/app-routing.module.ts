@@ -16,6 +16,13 @@ const routes: Routes = [
         './components/animation/rigid-body-simulation/rigid-body-simulation.module'
       ).then((m) => m.RigidBodySimulationModule),
   },
+  {
+    path: `particle-system`,
+    loadChildren: () =>
+      import(
+        './components/animation/particle-system/particle-system.module'
+      ).then((m) => m.ParticleSystemModule),
+  },
 ];
 
 @NgModule({

@@ -1,0 +1,26 @@
+<div class="flexbox margin-top margin-bottom">
+  <button
+    mat-raised-button
+    color="primary"
+    class="margin-right"
+    (click)="init()"
+  >
+    APPLY
+  </button>
+  <button mat-raised-button color="primary" (click)="toggleVisibility()">
+    {{ settingsVisible ? "HIDE" : "SHOW" }}
+  </button>
+</div>
+<div class="flexbox margin-top" *ngIf="settingsVisible">
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Particle amount</mat-label>
+    <input matInput [(ngModel)]="amount" type="number" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Particle speed</mat-label>
+    <input matInput [(ngModel)]="speed" type="number" />
+  </mat-form-field>
+</div>
+
+<div class="frame" #frame></div>
