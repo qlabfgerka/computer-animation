@@ -21,6 +21,9 @@ export class ParticleSystemComponent implements AfterViewInit {
   public amount: number = 100;
   public health: number = 1;
   public speed: number = 2;
+  public dampening: number = 3;
+  public boundrySet: boolean = true;
+  public collisions: boolean = false;
 
   private particles!: Array<Particle>;
 
@@ -44,6 +47,14 @@ export class ParticleSystemComponent implements AfterViewInit {
     this.init();
   }
 
+  public boundrySetChanged(): void {
+    this.init();
+  }
+
+  public collisionChanged(): void {
+    this.init();
+  }
+
   public toggleVisibility(): void {
     this.settingsVisible = !this.settingsVisible;
   }
@@ -64,6 +75,7 @@ export class ParticleSystemComponent implements AfterViewInit {
     const toGenerate = (elapsed * this.amount) / 100;
 
     this.createParticles(toGenerate);
+    if (this.collisions) this.handleCollision();
     this.updateParticles(elapsed);
 
     for (const particle of this.particles)
@@ -91,7 +103,7 @@ export class ParticleSystemComponent implements AfterViewInit {
       1,
       500
     );
-    this.camera.position.set(20, 20, 20);
+    this.camera.position.set(40, 40, 40);
     this.camera.lookAt(0, 0, 0);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -109,7 +121,7 @@ export class ParticleSystemComponent implements AfterViewInit {
   }
 
   private createParticle(): Particle {
-    const geometry = new THREE.SphereGeometry();
+    const geometry = new THREE.SphereGeometry(1);
     const material = new THREE.PointsMaterial({
       color: this.getRandomColor(),
       size: 1,
@@ -118,8 +130,8 @@ export class ParticleSystemComponent implements AfterViewInit {
     return {
       health: this.getRandomNumber(60, 100),
       position: new THREE.Vector3(
-        this.getRandomNumber(-1, 1),
-        this.getRandomNumber(-1, 1),
+        this.getRandomNumber(-10, 10),
+        this.getRandomNumber(-10, 10),
         0
       ),
       speed: new THREE.Vector3(
@@ -177,6 +189,51 @@ export class ParticleSystemComponent implements AfterViewInit {
       this.particles[i].health! -= this.health;
 
       this.scene.add(this.particles[i].mesh!);
+    }
+  }
+
+  private handleCollision(): void {
+    let positionDifference: THREE.Vector3;
+    let speedDifference: THREE.Vector3;
+    let normal: THREE.Vector3;
+
+    for (let i = 0; i < this.particles.length; i++) {
+      for (let j = 0; j < this.particles.length; j++) {
+        if (i === j) continue;
+
+        positionDifference = new THREE.Vector3().subVectors(
+          this.particles[i].position!,
+          this.particles[j].position!
+        );
+        speedDifference = new THREE.Vector3().subVectors(
+          this.particles[i].speed!,
+          this.particles[j].speed!
+        );
+
+        if (
+          positionDifference.dot(speedDifference) < 0 &&
+          positionDifference.length() < 2
+        ) {
+          normal = positionDifference.divideScalar(positionDifference.length());
+          this.particles[i].speed = this.particles[i]!.speed?.sub(
+            normal.multiply(
+              this.particles[i]!.speed?.multiply(normal)?.multiplyScalar(
+                1 + this.dampening
+              )!
+            )
+          );
+
+          this.particles[j].speed = this.particles[j]!.speed?.sub(
+            normal.multiply(
+              this.particles[j]!.speed?.multiply(normal)?.multiplyScalar(
+                1 + this.dampening
+              )!
+            )
+          );
+
+          break;
+        }
+      }
     }
   }
 }

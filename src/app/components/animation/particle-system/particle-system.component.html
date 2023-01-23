@@ -26,6 +26,26 @@
     <mat-label>Speed min/max</mat-label>
     <input matInput [(ngModel)]="speed" type="number" min="0" />
   </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Dampening</mat-label>
+    <input matInput [(ngModel)]="dampening" type="number" min="0" />
+  </mat-form-field>
+
+  <div class="flexbox checkbox-container">
+    <mat-checkbox [(ngModel)]="collisions" (ngModelChange)="collisionChanged()">
+      Enable collisions
+    </mat-checkbox>
+
+    <div class="break"></div>
+
+    <mat-checkbox
+      [(ngModel)]="boundrySet"
+      (ngModelChange)="boundrySetChanged()"
+    >
+      Boundry set
+    </mat-checkbox>
+  </div>
 </div>
 
 <div class="frame" #frame></div>
