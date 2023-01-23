@@ -18,8 +18,13 @@
   </mat-form-field>
 
   <mat-form-field appearance="fill" class="margin-right">
-    <mat-label>Particle speed</mat-label>
-    <input matInput [(ngModel)]="speed" type="number" />
+    <mat-label>Health</mat-label>
+    <input matInput [(ngModel)]="health" type="number" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Speed min/max</mat-label>
+    <input matInput [(ngModel)]="speed" type="number" min="0" />
   </mat-form-field>
 </div>
 

@@ -18,8 +18,9 @@ export class ParticleSystemComponent implements AfterViewInit {
   @ViewChild('frame', { static: false }) private readonly frame!: ElementRef;
 
   public settingsVisible: boolean = true;
-  public amount: number = 1;
-  public speed: number = 1000;
+  public amount: number = 100;
+  public health: number = 1;
+  public speed: number = 2;
 
   private particles!: Array<Particle>;
 
@@ -27,6 +28,10 @@ export class ParticleSystemComponent implements AfterViewInit {
   private renderer!: THREE.WebGLRenderer;
   private camera!: THREE.PerspectiveCamera;
   private controls!: OrbitControls;
+  private id!: number;
+  private start!: number;
+
+  private readonly GRAVITY: number = -0.98;
 
   @HostListener('window:resize', ['$event'])
   private onResize(event: any): void {
@@ -44,24 +49,25 @@ export class ParticleSystemComponent implements AfterViewInit {
   }
 
   public init(): void {
+    if (this.id) cancelAnimationFrame(this.id);
     this.frame.nativeElement.innerHTML = '';
     this.particles = new Array<Particle>();
     this.prepareScene();
   }
 
   private animate() {
-    requestAnimationFrame(() => this.animate());
+    this.id = requestAnimationFrame(() => this.animate());
 
-    this.createParticles();
+    let elapsed = Date.now() - this.start;
+    this.start = Date.now();
 
-    for (let i = 0; i < this.particles.length; i++) {
-      this.particles[i].mesh!.position.set(
-        this.particles[i]!.position?.x!,
-        this.particles[i]!.position?.y!,
-        this.particles[i]!.position?.z!
-      );
-      this.scene.add(this.particles[i].mesh!);
-    }
+    const toGenerate = (elapsed * this.amount) / 100;
+
+    this.createParticles(toGenerate);
+    this.updateParticles(elapsed);
+
+    for (const particle of this.particles)
+      if (particle.health! <= 0) this.scene.remove(particle.mesh!);
 
     this.controls.update();
 
@@ -74,6 +80,7 @@ export class ParticleSystemComponent implements AfterViewInit {
 
     this.scene = new THREE.Scene();
 
+    this.start = Date.now();
     this.animate();
   }
 
@@ -102,7 +109,7 @@ export class ParticleSystemComponent implements AfterViewInit {
   }
 
   private createParticle(): Particle {
-    const geometry = new THREE.BoxGeometry();
+    const geometry = new THREE.SphereGeometry();
     const material = new THREE.PointsMaterial({
       color: this.getRandomColor(),
       size: 1,
@@ -116,9 +123,9 @@ export class ParticleSystemComponent implements AfterViewInit {
         0
       ),
       speed: new THREE.Vector3(
-        this.getRandomNumber(-1, 1),
-        this.getRandomNumber(-1, 1),
-        1
+        this.getRandomNumber(-this.speed, this.speed),
+        this.getRandomNumber(-this.speed, 2 * this.speed),
+        this.getRandomNumber(-this.speed, this.speed)
       ),
       mesh: new THREE.Mesh(geometry, material),
     };
@@ -134,24 +141,42 @@ export class ParticleSystemComponent implements AfterViewInit {
     return color;
   }
 
-  private createParticles(): void {
-    const deadParticles: number = this.particles
-      .map((particle: Particle) => particle.health as number)
-      .filter((health: number) => health <= 0).length;
-
-    const toGenerate: number = Math.ceil(this.amount / 60);
+  private createParticles(toGenerate: number): void {
     let particle: Particle;
 
-    for (let i = toGenerate; i >= 0; i--) {
+    while (this.particles.length < this.amount && toGenerate >= 0) {
+      particle = this.createParticle();
+      this.particles.push(particle);
+      --toGenerate;
+    }
+
+    for (let i = 0; i < this.particles.length; i++) {
+      if (toGenerate <= 0) break;
+      if (this.particles[i].health! > 0) continue;
+
       particle = this.createParticle();
 
-      if (this.particles.length < this.amount) this.particles.push(particle);
-      else {
-        for (let j = 0; j < this.particles.length; j++) {
-          if (deadParticles < toGenerate) return;
-          else if (this.particles[j].health! <= 0) this.particles[j] = particle;
-        }
-      }
+      this.particles[i] = particle;
+      --toGenerate;
+    }
+  }
+
+  private updateParticles(elapsed: number): void {
+    for (let i = 0; i < this.particles.length; i++) {
+      if (!this.particles[i]) continue;
+
+      this.particles[i].speed!.y =
+        this.particles[i].speed?.y! + this.GRAVITY / elapsed;
+
+      this.particles[i].mesh!.position.set(
+        this.particles[i]!.position?.x! + this.particles[i]!.speed!.x / elapsed,
+        this.particles[i]!.position?.y! + this.particles[i]!.speed!.y / elapsed,
+        this.particles[i]!.position?.z! + this.particles[i]!.speed!.z / elapsed
+      );
+      this.particles[i].position = this.particles[i].mesh?.position;
+      this.particles[i].health! -= this.health;
+
+      this.scene.add(this.particles[i].mesh!);
     }
   }
 }
