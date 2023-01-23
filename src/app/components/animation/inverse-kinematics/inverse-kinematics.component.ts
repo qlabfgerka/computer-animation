@@ -5,7 +5,7 @@ import {
   HostListener,
   ViewChild,
 } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { ConstraintsDialogComponent } from 'src/app/shared/dialogs/constraints-dialog/constraints-dialog.component';
 import * as THREE from 'three';
 
@@ -213,8 +213,8 @@ export class InverseKinematicsComponent implements AfterViewInit {
   private initRenderer(): void {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(
-      this.frame.nativeElement.offsetWidth - 5,
-      this.frame.nativeElement.offsetHeight - 4
+      this.frame.nativeElement.offsetWidth,
+      this.frame.nativeElement.offsetHeight
     );
     this.renderer.setClearColor(0xffffff);
     this.frame.nativeElement.appendChild(this.renderer.domElement);

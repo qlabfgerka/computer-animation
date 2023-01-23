@@ -1,0 +1,22 @@
+<mat-dialog-content>
+  <div class="flexbox margin-top">
+    <mat-form-field
+      appearance="fill"
+      class="margin-right"
+      *ngFor="let label of labels; let i = index"
+    >
+      <mat-label>{{ label }}</mat-label>
+      <input matInput [(ngModel)]="settings[i]" />
+    </mat-form-field>
+  </div>
+  <div class="flexbox">
+    <button
+      mat-raised-button
+      color="primary"
+      class="margin-right"
+      (click)="apply()"
+    >
+      APPLY
+    </button>
+  </div>
+</mat-dialog-content>

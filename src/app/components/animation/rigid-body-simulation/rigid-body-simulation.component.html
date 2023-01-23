@@ -1,0 +1,75 @@
+<div class="flexbox margin-top margin-bottom">
+  <button
+    mat-raised-button
+    color="primary"
+    class="margin-right"
+    (click)="init()"
+  >
+    APPLY
+  </button>
+  <button mat-raised-button color="primary" (click)="toggleVisibility()">
+    {{ settingsVisible ? "HIDE" : "SHOW" }}
+  </button>
+</div>
+<div class="flexbox margin-top" *ngIf="settingsVisible">
+  <mat-label>Floor angle</mat-label>
+  <div class="break"></div>
+  <mat-slider
+    thumbLabel
+    [displayWith]="formatLabel"
+    tickInterval="auto"
+    min="0"
+    max="360"
+    [(ngModel)]="angle"
+    (ngModelChange)="init()"
+    [displayWith]="formatLabel"
+  >
+    <input matSliderThumb />
+  </mat-slider>
+
+  <div class="break"></div>
+
+  <mat-checkbox
+    [(ngModel)]="spawnEnabled"
+    (ngModelChange)="spawnEnabledChanged()"
+  >
+    Spawn Enabled
+  </mat-checkbox>
+
+  <div class="break"></div>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Cubes</mat-label>
+    <input
+      matInput
+      [(ngModel)]="cubes"
+      type="number"
+      (ngModelChange)="init()"
+    />
+    <mat-icon matSuffix (click)="openCubeSettings()">mode_edit</mat-icon>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Spheres</mat-label>
+    <input
+      matInput
+      [(ngModel)]="spheres"
+      type="number"
+      (ngModelChange)="init()"
+    />
+    <mat-icon matSuffix (click)="openSphereSettings()">mode_edit</mat-icon>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Mesh size</mat-label>
+    <input matInput [(ngModel)]="size" type="number" (ngModelChange)="init()" />
+  </mat-form-field>
+</div>
+
+<div
+  class="frame"
+  (mousemove)="mouseMove($event)"
+  (mousedown)="mouseDown($event)"
+  (mouseup)="mouseUp()"
+  #frame
+></div>
