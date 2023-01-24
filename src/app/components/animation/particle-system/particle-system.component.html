@@ -32,6 +32,16 @@
     <input matInput [(ngModel)]="dampening" type="number" min="0" />
   </mat-form-field>
 
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Alpha</mat-label>
+    <input matInput [(ngModel)]="alpha" type="number" min="0" />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="margin-right">
+    <mat-label>Beta</mat-label>
+    <input matInput [(ngModel)]="beta" type="number" min="0" />
+  </mat-form-field>
+
   <div class="flexbox checkbox-container">
     <mat-checkbox [(ngModel)]="collisions" (ngModelChange)="collisionChanged()">
       Enable collisions

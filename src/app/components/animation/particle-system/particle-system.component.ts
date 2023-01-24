@@ -22,6 +22,8 @@ export class ParticleSystemComponent implements AfterViewInit {
   public health: number = 1;
   public speed: number = 2;
   public dampening: number = 3;
+  public alpha: number = 1;
+  public beta: number = 1;
   public boundrySet: boolean = true;
   public collisions: boolean = false;
 
@@ -81,6 +83,7 @@ export class ParticleSystemComponent implements AfterViewInit {
     this.createParticles(toGenerate);
     this.updateParticles(elapsed);
     if (this.collisions) this.handleCollision();
+    this.updateParticles(elapsed);
 
     for (const particle of this.particles)
       if (particle.health! <= 0) this.scene.remove(particle.mesh!);
@@ -223,6 +226,10 @@ export class ParticleSystemComponent implements AfterViewInit {
   }
 
   private handleCollision(): void {
+    this.boundrySet ? this.handleBoundrySet() : this.handleBoundryNotSet();
+  }
+
+  private handleBoundrySet(): void {
     let positionDifference: THREE.Vector3;
     let speedDifference: THREE.Vector3;
     let normal: THREE.Vector3;
@@ -267,25 +274,83 @@ export class ParticleSystemComponent implements AfterViewInit {
         }
       }
 
-      for (let j = 0; j < this.boundingBox.length; j++) {
-        if (
-          this.particles[i].position!.y! > 20 ||
-          this.particles[i].position!.y! < -20 ||
-          this.particles[i].position!.z! > 20 ||
-          this.particles[i].position!.z! < -20 ||
-          this.particles[i].position!.x! < -20
-        ) {
-          normal = this.normals[j];
-          /*this.particles[i].speed = this.particles[i]!.speed?.sub(
+      //for (let j = 0; j < this.boundingBox.length; j++) {
+      if (
+        this.particles[i].position!.y! > 20 ||
+        this.particles[i].position!.y! < -20 ||
+        this.particles[i].position!.z! > 20 ||
+        this.particles[i].position!.z! < -20 ||
+        this.particles[i].position!.x! < -20
+      ) {
+        //normal = this.normals[j];
+        /*this.particles[i].speed = this.particles[i]!.speed?.sub(
             normal.multiply(
               this.particles[i]!.speed?.multiply(normal)?.multiplyScalar(
                 1 + this.dampening
               )!
             )
           );*/
-          this.particles[i].speed = this.particles[i].speed?.multiplyScalar(-1);
-        }
+        this.particles[i].speed = this.particles[i].speed?.multiplyScalar(-1);
       }
+      //}
+    }
+  }
+
+  private handleBoundryNotSet(): void {
+    let d: THREE.Vector3;
+    let positionDifference: THREE.Vector3;
+    let boxPosition: THREE.Vector3 = null!;
+
+    for (let i = 0; i < this.particles.length; i++) {
+      d = new THREE.Vector3(0, 0, 0);
+
+      for (let j = 0; j < this.particles.length; j++) {
+        if (i === j) continue;
+
+        positionDifference = new THREE.Vector3().subVectors(
+          this.particles[i].position!,
+          this.particles[j].position!
+        );
+
+        d = d.add(
+          positionDifference.divideScalar(
+            Math.pow(positionDifference.length() + 1, this.alpha)
+          )
+        );
+      }
+
+      if (this.particles[i].position!.y! > 15) {
+        boxPosition = new THREE.Vector3(0, -15, 0);
+      } else if (this.particles[i].position!.y! < -15) {
+        boxPosition = new THREE.Vector3(0, 15, 0);
+      } else if (this.particles[i].position!.z! > 15) {
+        boxPosition = new THREE.Vector3(0, 0, -15);
+      } else if (this.particles[i].position!.z! < -15) {
+        boxPosition = new THREE.Vector3(0, 0, 15);
+      } else if (this.particles[i].position!.x! < -15) {
+        boxPosition = new THREE.Vector3(15, 0, 0);
+      }
+
+      if (boxPosition) {
+        positionDifference = new THREE.Vector3().subVectors(
+          this.particles[i].position!,
+          boxPosition!
+        );
+
+        d = positionDifference.divideScalar(
+          Math.pow(positionDifference.length() + 1, this.alpha)
+        );
+      }
+
+      if (!d.x || !d.y || !d.z) continue;
+
+      this.particles[i].speed = this.particles[i]
+        .speed!.multiplyScalar(1 - this.beta)
+        .add(d.multiplyScalar(this.beta));
+
+      this.limitSpeed(this.particles[i]);
+
+      boxPosition = null!;
     }
   }
 
@@ -294,5 +359,7 @@ export class ParticleSystemComponent implements AfterViewInit {
     if (particle.speed!.x < -5) particle.speed!.x = -5;
     if (particle.speed!.y > 5) particle.speed!.y = 5;
     if (particle.speed!.y < -5) particle.speed!.y = -5;
+    if (particle.speed!.z > 5) particle.speed!.z = 5;
+    if (particle.speed!.z < -5) particle.speed!.z = -5;
   }
 }
