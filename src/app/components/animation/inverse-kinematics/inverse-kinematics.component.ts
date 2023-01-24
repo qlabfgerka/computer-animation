@@ -43,8 +43,6 @@ export class InverseKinematicsComponent implements AfterViewInit {
     this.init();
   }
 
-  ngOnInit(): void {}
-
   public toggleVisibility(): void {
     this.settingsVisible = !this.settingsVisible;
   }
