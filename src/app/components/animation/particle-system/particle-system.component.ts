@@ -26,6 +26,7 @@ export class ParticleSystemComponent implements AfterViewInit {
   public collisions: boolean = false;
 
   private particles!: Array<Particle>;
+  private boundingBox!: Array<THREE.Mesh>;
 
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
@@ -63,6 +64,7 @@ export class ParticleSystemComponent implements AfterViewInit {
     if (this.id) cancelAnimationFrame(this.id);
     this.frame.nativeElement.innerHTML = '';
     this.particles = new Array<Particle>();
+    this.boundingBox = new Array<THREE.Mesh>();
     this.prepareScene();
   }
 
@@ -92,6 +94,8 @@ export class ParticleSystemComponent implements AfterViewInit {
 
     this.scene = new THREE.Scene();
 
+    this.prepareBoundingBox();
+
     this.start = Date.now();
     this.animate();
   }
@@ -103,7 +107,7 @@ export class ParticleSystemComponent implements AfterViewInit {
       1,
       500
     );
-    this.camera.position.set(40, 40, 40);
+    this.camera.position.set(100, 0, 0);
     this.camera.lookAt(0, 0, 0);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -118,6 +122,29 @@ export class ParticleSystemComponent implements AfterViewInit {
     );
     this.renderer.setClearColor(0xffffff);
     this.frame.nativeElement.appendChild(this.renderer.domElement);
+  }
+
+  private prepareBoundingBox(): void {
+    let meshGeometry = new THREE.BoxGeometry(50, 1, 50);
+    const x = [0, /*-25,*/ -25, 0, 0, 0];
+    const y = [25, /*0,*/ 0, 0, 0, -25];
+    const z = [0, /*0,*/ 0, 25, -25, 0];
+    const angles = [0, /*90,*/ 90, 90, 90, 0];
+
+    for (let i = 0; i < x.length; i++) {
+      let meshMaterial = new THREE.MeshBasicMaterial({
+        color: this.getRandomColor(),
+      });
+
+      const mesh = new THREE.Mesh(meshGeometry, meshMaterial);
+      mesh.position.set(x[i], y[i], z[i]);
+
+      if (i < 2) mesh.rotateZ(THREE.MathUtils.degToRad(angles[i]));
+      else mesh.rotateX(THREE.MathUtils.degToRad(angles[i]));
+
+      this.boundingBox.push(mesh);
+      this.scene.add(mesh);
+    }
   }
 
   private createParticle(): Particle {
